@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>飲食回報系統</title>
+    <title>飲食回報系統 - 跨平台版</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- React & ReactDOM -->
@@ -29,13 +29,13 @@
 <body class="bg-slate-50 text-gray-900">
     <div id="root"></div>
 
-    <!-- Firebase SDK (Compat Version) -->
+    <!-- Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
 
     <script type="text/babel">
-        // --- Firebase 配置 (請確認與您的專案資訊一致) ---
+        // --- Firebase 配置 ---
         const firebaseConfig = {
             apiKey: "AIzaSyBY5DHhvroCGnazBmvnUTUiaqbckWeBgJM",
             authDomain: "diet-tracker-janice.firebaseapp.com",
@@ -206,10 +206,23 @@
                 return allRecords.filter(r => r.username === currentUser?.name);
             };
 
+            // 處理照片選取，並在選取時直接壓縮以提高流暢度
+            const handleFileChange = async (e) => {
+                const file = e.target.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onloadend = async () => {
+                        const compressed = await compressImage(reader.result);
+                        setFormData({...formData, photo: compressed});
+                    };
+                    reader.readAsDataURL(file);
+                }
+            };
+
             if (loading) return <div className="flex h-screen items-center justify-center font-bold text-blue-600 animate-pulse text-lg tracking-widest uppercase">Initializing...</div>;
 
             return (
-                <div className="min-h-screen flex flex-col relative overflow-x-hidden font-sans">
+                <div className="min-h-screen flex flex-col relative overflow-x-hidden font-sans text-left">
                     
                     {setupError && (
                         <div className="fixed inset-0 z-[100] bg-slate-900/95 flex items-center justify-center p-4">
@@ -218,13 +231,13 @@
                                 <h2 className="text-2xl font-black">{setupError.title}</h2>
                                 <p className="text-gray-500 text-sm font-bold leading-relaxed">{setupError.message}</p>
                                 {setupError.link && <a href={setupError.link} target="_blank" className="bg-blue-600 text-white py-4 rounded-2xl block font-black uppercase tracking-widest text-xs">前往設定頁面</a>}
-                                <button onClick={() => window.location.reload()} className="w-full text-xs text-gray-400 font-black uppercase hover:text-blue-500 transition-colors">設定完後重新整理</button>
+                                <button onClick={() => window.location.reload()} className="w-full text-xs text-gray-400 font-black uppercase hover:text-blue-500 transition-colors">設定完後點此重新整理</button>
                             </div>
                         </div>
                     )}
 
                     {showSuccess && (
-                        <div className="fixed inset-0 z-[90] flex items-center justify-center bg-white/80 backdrop-blur-sm transition-all">
+                        <div className="fixed inset-0 z-[90] flex items-center justify-center bg-white/90 backdrop-blur-sm transition-all">
                             <div className="flex flex-col items-center animate-bounce">
                                 <div className="bg-green-500 p-6 rounded-full text-white shadow-xl mb-4"><Icon name="check" size={64} strokeWidth={4} /></div>
                                 <h2 className="text-2xl font-black text-slate-800">儲存成功!</h2>
@@ -234,7 +247,7 @@
 
                     {/* 導覽列 */}
                     <nav className="bg-white border-b border-slate-200 sticky top-0 z-50 px-4 py-3 md:px-8 shadow-sm">
-                        <div className="max-w-7xl mx-auto flex justify-between items-center">
+                        <div className="max-w-7xl mx-auto flex justify-between items-center text-left">
                             <div className="flex items-center gap-2 group cursor-default">
                                 <div className="bg-blue-600 p-1.5 rounded-lg text-white group-hover:rotate-12 transition-transform shadow-lg shadow-blue-200">
                                     <Icon name="utensils" size={20} />
@@ -277,23 +290,24 @@
                                     <h1 className="text-4xl font-black text-slate-800 tracking-tighter mb-2">LOGIN</h1>
                                     <p className="text-slate-400 font-bold text-sm mb-10">健康由每天的飲食回報開始</p>
                                     <form onSubmit={handleLogin} className="space-y-5 text-left">
-                                        <div className="relative group">
+                                        <div className="relative group text-left">
                                             <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-blue-500 transition-colors"><Icon name="user" size={18} /></div>
                                             <input placeholder="帳號" className="w-full p-5 pl-12 bg-slate-50 border-none rounded-[24px] font-bold outline-none focus:ring-2 focus:ring-blue-500 shadow-inner" value={loginData.username} onChange={e => setLoginData({...loginData, username: e.target.value})} required />
                                         </div>
-                                        <div className="relative group">
+                                        <div className="relative group text-left">
                                             <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-blue-500 transition-colors"><Icon name="lock" size={18} /></div>
                                             <input type="password" placeholder="密碼" className="w-full p-5 pl-12 bg-slate-50 border-none rounded-[24px] font-bold outline-none focus:ring-2 focus:ring-blue-500 shadow-inner" value={loginData.password} onChange={e => setLoginData({...loginData, password: e.target.value})} required />
                                         </div>
                                         {loginData.error && <p className="text-red-500 text-xs font-black text-center bg-red-50 py-3 rounded-xl animate-in">{loginData.error}</p>}
                                         <button className="w-full bg-slate-900 text-white font-black py-6 rounded-[28px] shadow-xl hover:bg-blue-600 active:scale-95 transition-all text-lg">登入系統</button>
                                     </form>
+                                    <div className="mt-8 text-[10px] font-black text-slate-300 tracking-widest uppercase text-center">Admin: admin / admin123</div>
                                 </div>
                             </div>
                         )}
 
                         {view === 'userManagement' && (
-                            <div className="max-w-4xl mx-auto space-y-8 animate-in">
+                            <div className="max-w-4xl mx-auto space-y-8 animate-in text-left">
                                 <h2 className="text-3xl font-black tracking-tighter flex items-center gap-3 px-2">
                                     <Icon name="users" size={32} className="text-blue-600" /> 帳號管理中心
                                 </h2>
@@ -314,7 +328,7 @@
                                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                                     {appUsers.map(u => (
                                         <div key={u.id} className="bg-white p-6 rounded-[32px] border border-slate-100 flex justify-between items-center shadow-sm hover:shadow-md transition-all group">
-                                            <div>
+                                            <div className="text-left">
                                                 <div className="font-black text-lg tracking-tight">{u.username}</div>
                                                 <div className="text-[10px] font-black text-slate-300 uppercase tracking-widest">PASS: {u.password}</div>
                                             </div>
@@ -328,13 +342,13 @@
                         )}
 
                         {view === 'report' && (
-                            <div className="max-w-2xl mx-auto space-y-6 animate-in">
-                                <h2 className="text-3xl font-black tracking-tighter px-2">{editingId ? '編輯數據紀錄' : '新增餐點回報'}</h2>
+                            <div className="max-w-2xl mx-auto space-y-6 animate-in text-left">
+                                <h2 className="text-3xl font-black tracking-tighter px-2">新增餐點回報</h2>
                                 <form onSubmit={handleSubmit} className="bg-white rounded-[40px] p-8 md:p-10 shadow-2xl border border-slate-50 space-y-8">
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                         <div className="space-y-2">
                                             <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">回報時間</label>
-                                            <input type="datetime-local" className="w-full bg-slate-50 p-4 rounded-2xl font-black border-none shadow-inner" value={formData.time} onChange={e => setFormData({...formData, time: e.target.value})} />
+                                            <input type="datetime-local" className="w-full bg-slate-50 p-4 rounded-2xl font-black border-none shadow-inner text-slate-700" value={formData.time} onChange={e => setFormData({...formData, time: e.target.value})} />
                                         </div>
                                         <div className="space-y-2">
                                             <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">餐點類別</label>
@@ -347,15 +361,15 @@
                                     </div>
                                     <div className="space-y-4">
                                         <div className="space-y-2">
-                                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">飲食內容</label>
+                                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 text-left block">飲食內容</label>
                                             <textarea placeholder="例如：雞腿便當、一顆蘋果..." className="w-full p-6 bg-slate-50 rounded-[32px] h-32 border-none focus:ring-2 focus:ring-blue-500/20 resize-none font-bold shadow-inner" value={formData.foodContent} onChange={e => setFormData({...formData, foodContent: e.target.value})} required />
                                         </div>
-                                        <div className="relative group">
+                                        <div className="relative group text-left">
                                             <div className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-blue-500 transition-colors"><Icon name="coffee" size={20} /></div>
                                             <input placeholder="飲料內容" className="w-full p-5 pl-14 bg-slate-50 border-none rounded-[24px] font-bold shadow-inner" value={formData.drinkContent} onChange={e => setFormData({...formData, drinkContent: e.target.value})} />
                                         </div>
                                     </div>
-                                    <div className="space-y-3 px-1">
+                                    <div className="space-y-3 px-1 text-left">
                                         <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest block">飽足感程度</label>
                                         <div className="flex gap-2">
                                             {['很餓', '剛好', '很飽'].map(l => (
@@ -363,24 +377,27 @@
                                             ))}
                                         </div>
                                     </div>
-                                    <label className="block w-full h-64 border-4 border-dashed border-slate-100 rounded-[48px] flex flex-col items-center justify-center cursor-pointer bg-slate-50 hover:bg-slate-100 transition-all overflow-hidden relative shadow-inner">
-                                        <input type="file" accept="image/*" capture="environment" className="hidden" onChange={e => {
-                                            const file = e.target.files[0];
-                                            if (file) {
-                                                const r = new FileReader();
-                                                r.onloadend = () => setFormData({...formData, photo: r.result});
-                                                r.readAsDataURL(file);
-                                            }
-                                        }} />
-                                        {formData.photo ? (
-                                            <img src={formData.photo} className="w-full h-full object-cover animate-in" />
-                                        ) : (
-                                            <div className="text-center">
-                                                <div className="p-6 bg-white rounded-full shadow-xl mb-4 text-blue-500 group-hover:scale-110 transition-all mx-auto w-fit"><Icon name="camera" size={40} /></div>
-                                                <span className="text-[11px] font-black text-slate-400 uppercase tracking-[0.3em]">開啟相機拍照</span>
-                                            </div>
-                                        )}
-                                    </label>
+                                    
+                                    {/* 修正照片選取區域：移除 capture 並使用覆蓋式的 input */}
+                                    <div className="relative block w-full h-64 border-4 border-dashed border-slate-100 rounded-[48px] overflow-hidden group shadow-inner bg-slate-50 hover:bg-slate-100 transition-all">
+                                        <input 
+                                            type="file" 
+                                            accept="image/*" 
+                                            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-20" 
+                                            onChange={handleFileChange} 
+                                        />
+                                        <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none z-10">
+                                            {formData.photo ? (
+                                                <img src={formData.photo} className="w-full h-full object-cover animate-in" alt="preview" />
+                                            ) : (
+                                                <div className="text-center">
+                                                    <div className="p-6 bg-white rounded-full shadow-xl mb-4 text-blue-500 group-hover:scale-110 transition-all mx-auto w-fit"><Icon name="camera" size={40} /></div>
+                                                    <span className="text-[11px] font-black text-slate-400 uppercase tracking-[0.3em]">點擊拍照或選擇相片</span>
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+
                                     <button type="submit" disabled={isSubmitting} className="w-full bg-slate-900 text-white font-black py-6 rounded-[32px] shadow-2xl active:scale-[0.98] transition-all disabled:bg-slate-300 text-xl tracking-[0.4em]">
                                         {isSubmitting ? <div className="w-8 h-8 border-4 border-white border-t-transparent animate-spin rounded-full mx-auto"></div> : 'Confirm & Save'}
                                     </button>
@@ -389,7 +406,7 @@
                         )}
 
                         {(view === 'history' || view === 'admin') && (
-                            <div className="space-y-6 md:space-y-10 animate-in">
+                            <div className="space-y-6 md:space-y-10 animate-in text-left">
                                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 px-2">
                                     <h2 className="text-4xl font-black tracking-tighter flex items-center gap-3">
                                         {view === 'admin' ? <Icon name="shield-check" size={32} className="text-purple-600" /> : <Icon name="history" size={32} className="text-blue-600" />}
@@ -406,7 +423,7 @@
                                 </div>
 
                                 {currentUser?.role === 'admin' && (
-                                    <div className="bg-white p-6 rounded-[36px] shadow-md border border-slate-100 flex flex-col md:flex-row items-center gap-5">
+                                    <div className="bg-white p-6 rounded-[36px] shadow-md border border-slate-100 flex flex-col md:flex-row items-center gap-5 text-left">
                                         <div className="flex items-center gap-3 w-full md:w-auto">
                                             <Icon name="filter" size={22} className="text-slate-500" />
                                             <span className="font-black text-slate-400 uppercase text-xs tracking-widest">篩選使用者:</span>
@@ -418,36 +435,36 @@
                                     </div>
                                 )}
 
-                                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 md:gap-8 pb-24">
+                                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 md:gap-8 pb-24 text-left">
                                     {getDisplayRecords().length === 0 ? (
                                         <div className="col-span-full py-32 bg-white rounded-[56px] border-4 border-dashed border-slate-100 flex flex-col items-center gap-6">
                                             <Icon name="utensils" size={80} className="text-slate-100" />
-                                            <p className="font-black text-slate-300 tracking-[0.4em] uppercase">無相關紀錄</p>
+                                            <p className="font-black text-slate-300 tracking-[0.4em] uppercase text-center">無相關紀錄</p>
                                         </div>
                                     ) : (
                                         getDisplayRecords().map(record => (
-                                            <div key={record.id} className="bg-white rounded-[50px] shadow-lg border border-slate-100 flex flex-col relative overflow-hidden group hover:shadow-2xl transition-all border-l-[12px] border-l-blue-600">
+                                            <div key={record.id} className="bg-white rounded-[50px] shadow-lg border border-slate-100 flex flex-col relative overflow-hidden group hover:shadow-2xl transition-all border-l-[12px] border-l-blue-600 text-left">
                                                 <div className="absolute top-5 right-5 z-10 flex gap-2">
                                                     {(currentUser?.role === 'admin' || record.username === currentUser?.name) && (
                                                         <button onClick={() => { setEditingId(record.id); setFormData({...record}); setView('report'); }} className="p-3 bg-white/90 backdrop-blur-sm text-slate-400 rounded-2xl hover:bg-blue-600 hover:text-white shadow-lg transition-all scale-0 group-hover:scale-100"><Icon name="pencil" size={18} /></button>
                                                     )}
                                                 </div>
                                                 <div className="p-6 md:p-8 space-y-6">
-                                                    <div className="flex gap-5">
+                                                    <div className="flex gap-5 text-left">
                                                         <div className="w-24 h-24 md:w-32 md:h-32 rounded-[32px] overflow-hidden flex-shrink-0 bg-slate-50 border-4 border-white shadow-inner">
-                                                            {record.photo ? <img src={record.photo} className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center text-slate-200"><Icon name="camera-off" size={32} /></div>}
+                                                            {record.photo ? <img src={record.photo} className="w-full h-full object-cover" alt="diet" /> : <div className="w-full h-full flex items-center justify-center text-slate-200"><Icon name="camera-off" size={32} /></div>}
                                                         </div>
                                                         <div className="flex-1 min-w-0 flex flex-col justify-between">
                                                             <div className="space-y-1 text-left">
                                                                 <div className="flex items-center justify-between">
-                                                                    <span className={`text-[10px] px-3 py-1 rounded-lg font-black tracking-widest uppercase ${record.mealType === '早餐' ? 'bg-orange-50 text-orange-600' : 'bg-blue-50 text-blue-600'}`}>{record.mealType}</span>
-                                                                    <span className="text-[10px] text-slate-300 font-bold">{record.time ? record.time.replace('T', ' ') : ''}</span>
+                                                                    <span className={`text-[10px] px-3 py-1 rounded-lg font-black tracking-widest uppercase ${record.mealType === '早餐' ? 'bg-orange-100 text-orange-600' : 'bg-blue-100 text-blue-600'}`}>{record.mealType}</span>
+                                                                    <span className="text-[10px] text-gray-300 font-bold">{record.time ? record.time.replace('T', ' ') : ''}</span>
                                                                 </div>
                                                                 <h3 className="text-xl font-black text-slate-800 line-clamp-1 mt-1">{record.foodContent}</h3>
                                                                 <p className="text-xs text-slate-400 font-bold truncate flex items-center gap-1.5"><Icon name="coffee" size={14} className="text-slate-300" /> {record.drinkContent || '水'}</p>
                                                             </div>
                                                             <div className="flex items-center justify-between mt-4">
-                                                                <span className={`text-[11px] px-4 py-1.5 rounded-2xl font-black uppercase ${record.isFull === '很飽' ? 'bg-green-100 text-green-700 shadow-sm shadow-green-50' : 'bg-slate-100 text-slate-500'}`}>{record.isFull}</span>
+                                                                <span className={`text-[11px] px-4 py-1.5 rounded-2xl font-black uppercase ${record.isFull === '很飽' ? 'bg-green-100 text-green-700' : 'bg-slate-100 text-slate-500'}`}>{record.isFull}</span>
                                                                 {view === 'admin' && <span className="text-[11px] text-white bg-slate-900 px-4 py-1.5 rounded-2xl font-black">@{record.username}</span>}
                                                             </div>
                                                         </div>
