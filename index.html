@@ -1,535 +1,535 @@
 <!DOCTYPE html>
 <html lang="zh-TW">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>飲食回報系統 - 專業版</title>
-    <!-- Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <!-- React & ReactDOM -->
-    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-    <script src="https://unpkg.com-dom@18/umd/react-dom.production.min.js"></script>
-    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-    <!-- Babel for Browser Rendering -->
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-    <!-- Lucide Core -->
-    <script src="https://unpkg.com/lucide@0.344.0/dist/umd/lucide.js"></script>
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&display=swap');
-        body { 
-            font-family: 'Noto Sans TC', sans-serif; 
-            -webkit-tap-highlight-color: transparent;
-        }
-        .animate-in { animation: fadeIn 0.3s ease-out; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        
-        @media (max-width: 640px) {
-            ::-webkit-scrollbar { width: 0px; background: transparent; }
-        }
-        
-        input[type="datetime-local"] { min-height: 44px; }
-        button { cursor: pointer; transition: all 0.2s ease; }
-        button:active { transform: scale(0.95); }
-    </style>
-</head>
-<body class="bg-slate-50 text-gray-900 overflow-x-hidden">
-    <div id="root"></div>
-
-    <!-- Firebase SDK -->
-    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
-
-    <script type="text/babel">
-        const firebaseConfig = {
-            apiKey: "AIzaSyBY5DHhvroCGnazBmvnUTUiaqbckWeBgJM",
-            authDomain: "diet-tracker-janice.firebaseapp.com",
-            projectId: "diet-tracker-janice",
-            storageBucket: "diet-tracker-janice.firebasestorage.app",
-            messagingSenderId: "714595945356",
-            appId: "1:714595945356:web:d1e5205e7390fa512524a9"
-        };
-
-        const { useState, useEffect, useRef } = React;
-
-        const Icon = ({ name, size = 20, className = "", strokeWidth = 2, fill = "none" }) => {
-            const iconRef = useRef(null);
-            useEffect(() => {
-                if (window.lucide && iconRef.current) {
-                    iconRef.current.innerHTML = "";
-                    const iconElement = document.createElement('i');
-                    iconElement.setAttribute('data-lucide', name);
-                    if (size) {
-                        iconElement.style.width = `${size}px`;
-                        iconElement.style.height = `${size}px`;
-                    }
-                    if (className) iconElement.className = className;
-                    iconRef.current.appendChild(iconElement);
-                    window.lucide.createIcons({
-                        attrs: { 'stroke-width': strokeWidth, 'fill': fill }
-                    });
-                }
-            }, [name, size, className, strokeWidth, fill]);
-            return <span ref={iconRef} className={`inline-flex items-center justify-center ${className}`} style={{ width: size, height: size }}></span>;
-        };
-
-        const getLocalISOString = () => {
-            const now = new Date();
-            const offset = now.getTimezoneOffset() * 60000;
-            return new Date(now - offset).toISOString().slice(0, 16);
-        };
-
-        const compressImage = (base64Str) => {
-            return new Promise((resolve) => {
-                const img = new Image();
-                img.src = base64Str;
-                img.onload = () => {
-                    const canvas = document.createElement('canvas');
-                    const MAX_WIDTH = 800;
-                    let width = img.width;
-                    let height = img.height;
-                    if (width > MAX_WIDTH) {
-                        height *= MAX_WIDTH / width;
-                        width = MAX_WIDTH;
-                    }
-                    canvas.width = width;
-                    canvas.height = height;
-                    const ctx = canvas.getContext('2d');
-                    ctx.drawImage(img, 0, 0, width, height);
-                    resolve(canvas.toDataURL('image/jpeg', 0.6));
-                };
-            });
-        };
-
-        const App = () => {
-            const [view, setView] = useState('login');
-            const [loading, setLoading] = useState(true);
-            const [isSubmitting, setIsSubmitting] = useState(false);
-            const [showSuccess, setShowSuccess] = useState(false);
-            const [currentUser, setCurrentUser] = useState(null);
-            const [allRecords, setAllRecords] = useState([]);
-            const [appUsers, setAppUsers] = useState([]);
-            const [editingId, setEditingId] = useState(null);
-            const [adminFilterUser, setAdminFilterUser] = useState('all');
-            const [adviceInputs, setAdviceInputs] = useState({});
-            const [loginData, setLoginData] = useState({ username: '', password: '', error: null });
-            const [newUserFormData, setNewUserFormData] = useState({ username: '', password: '', role: 'user' });
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+        <title>飲食回報系統</title>
+        <!-- Tailwind CSS -->
+        <script src="https://cdn.tailwindcss.com"></script>
+        <!-- React & ReactDOM -->
+        <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+        <script src="https://unpkg.com-dom@18/umd/react-dom.production.min.js"></script>
+        <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+        <!-- Babel for Browser Rendering -->
+        <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+        <!-- Lucide Core -->
+        <script src="https://unpkg.com/lucide@0.344.0/dist/umd/lucide.js"></script>
+        <style>
+            @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&display=swap');
+            body { 
+                font-family: 'Noto Sans TC', sans-serif; 
+                -webkit-tap-highlight-color: transparent;
+            }
+            .animate-in { animation: fadeIn 0.3s ease-out; }
+            @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
             
-            // 自定義刪除確認狀態
-            const [deleteConfirm, setDeleteConfirm] = useState(null); // { id, title, type }
+            @media (max-width: 640px) {
+                ::-webkit-scrollbar { width: 0px; background: transparent; }
+            }
             
-            const [formData, setFormData] = useState({
-                time: getLocalISOString(), mealType: '早餐', foodContent: '', drinkContent: '', isFull: '普通', photo: null
-            });
+            input[type="datetime-local"] { min-height: 44px; }
+            button { cursor: pointer; transition: all 0.2s ease; }
+            button:active { transform: scale(0.95); }
+        </style>
+    </head>
+    <body class="bg-slate-50 text-gray-900 overflow-x-hidden">
+        <div id="root"></div>
 
-            useEffect(() => {
-                if (!window.firebase) return;
-                if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
-                const db = firebase.firestore();
-                const auth = firebase.auth();
+        <!-- Firebase SDK -->
+        <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+        <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+        <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
 
-                const initFirebase = async () => {
-                    try {
-                        try { await auth.signInAnonymously(); } catch (e) {}
-                        db.collection('diet_records').orderBy('time', 'desc').onSnapshot(snap => {
-                            setAllRecords(snap.docs.map(doc => ({id: doc.id, ...doc.data()})));
+        <script type="text/babel">
+            const firebaseConfig = {
+                apiKey: "AIzaSyBY5DHhvroCGnazBmvnUTUiaqbckWeBgJM",
+                authDomain: "diet-tracker-janice.firebaseapp.com",
+                projectId: "diet-tracker-janice",
+                storageBucket: "diet-tracker-janice.firebasestorage.app",
+                messagingSenderId: "714595945356",
+                appId: "1:714595945356:web:d1e5205e7390fa512524a9"
+            };
+
+            const { useState, useEffect, useRef } = React;
+
+            const Icon = ({ name, size = 20, className = "", strokeWidth = 2, fill = "none" }) => {
+                const iconRef = useRef(null);
+                useEffect(() => {
+                    if (window.lucide && iconRef.current) {
+                        iconRef.current.innerHTML = "";
+                        const iconElement = document.createElement('i');
+                        iconElement.setAttribute('data-lucide', name);
+                        if (size) {
+                            iconElement.style.width = `${size}px`;
+                            iconElement.style.height = `${size}px`;
+                        }
+                        if (className) iconElement.className = className;
+                        iconRef.current.appendChild(iconElement);
+                        window.lucide.createIcons({
+                            attrs: { 'stroke-width': strokeWidth, 'fill': fill }
                         });
-                        db.collection('app_users').onSnapshot(snap => {
-                            setAppUsers(snap.docs.map(doc => ({id: doc.id, ...doc.data()})));
-                        });
-                    } catch (err) { 
-                        console.error(err); 
-                    } finally { 
-                        setLoading(false); 
                     }
-                };
-                initFirebase();
-            }, []);
-
-            const handleLogin = (e) => {
-                e.preventDefault();
-                const { username, password } = loginData;
-                if (username === 'admin' && password === 'admin1357') {
-                    setCurrentUser({ name: '管理員', role: 'admin' });
-                    setView('admin');
-                } else {
-                    const found = appUsers.find(u => u.username === username && u.password === password);
-                    if (found) {
-                        setCurrentUser({ name: found.username, role: found.role });
-                        setView(found.role === 'admin' ? 'admin' : 'report');
-                    } else {
-                        setLoginData(prev => ({ ...prev, error: '帳號或密碼錯誤' }));
-                        setTimeout(() => setLoginData(prev => ({ ...prev, error: null })), 2500);
-                    }
-                }
+                }, [name, size, className, strokeWidth, fill]);
+                return <span ref={iconRef} className={`inline-flex items-center justify-center ${className}`} style={{ width: size, height: size }}></span>;
             };
 
-            const handleSubmit = async (e) => {
-                e.preventDefault();
-                setIsSubmitting(true);
-                const db = firebase.firestore();
-                try {
-                    let photo = formData.photo;
-                    if (photo && photo.startsWith('data:image')) photo = await compressImage(photo);
-                    const payload = { ...formData, photo, username: currentUser.name, updatedAt: firebase.firestore.FieldValue.serverTimestamp() };
-                    if (editingId) {
-                        await db.collection('diet_records').doc(editingId).update(payload);
-                    } else {
-                        await db.collection('diet_records').add({ ...payload, createdAt: firebase.firestore.FieldValue.serverTimestamp(), advice: "" });
-                    }
-                    setShowSuccess(true);
-                    setEditingId(null);
-                    setFormData({ time: getLocalISOString(), mealType: '早餐', foodContent: '', drinkContent: '', isFull: '普通', photo: null });
-                    setTimeout(() => { setShowSuccess(false); setView('history'); }, 1500);
-                } catch (err) { alert("送出失敗: " + err.message); } finally { setIsSubmitting(false); }
+            const getLocalISOString = () => {
+                const now = new Date();
+                const offset = now.getTimezoneOffset() * 60000;
+                return new Date(now - offset).toISOString().slice(0, 16);
             };
 
-            const confirmDeleteAction = async () => {
-                if (!deleteConfirm) return;
-                const db = firebase.firestore();
-                try {
-                    if (deleteConfirm.type === 'user') {
-                        await db.collection('app_users').doc(deleteConfirm.id).delete();
-                    } else if (deleteConfirm.type === 'record') {
-                        await db.collection('diet_records').doc(deleteConfirm.id).delete();
-                    }
-                } catch (err) {
-                    alert("刪除失敗: " + err.message);
-                } finally {
-                    setDeleteConfirm(null);
-                }
-            };
-
-            const handleSaveAdvice = async (recordId) => {
-                const text = adviceInputs[recordId];
-                if (!text?.trim()) return;
-                await firebase.firestore().collection('diet_records').doc(recordId).update({ advice: text, adviceAt: firebase.firestore.FieldValue.serverTimestamp() });
-                setAdviceInputs(prev => ({ ...prev, [recordId]: '' }));
-            };
-
-            const downloadCSV = () => {
-                const records = getDisplayRecords();
-                if (records.length === 0) return;
-                const headers = ['時間', '餐點', '內容', '飲料', '飽足感', '回報者', '建議'];
-                const csvContent = "\ufeff" + [headers.join(','), ...records.map(r => [`"${r.time}"`, `"${r.mealType}"`, `"${(r.foodContent || '').replace(/"/g, '""')}"`, `"${(r.drinkContent || '').replace(/"/g, '""')}"`, `"${r.isFull}"`, `"${r.username}"`, `"${(r.advice || '').replace(/"/g, '""')}"`].join(','))].join('\n');
-                const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-                const link = document.createElement('a');
-                link.href = URL.createObjectURL(blob);
-                link.download = `飲食報表_${currentUser.name}.csv`;
-                link.click();
-            };
-
-            const getDisplayRecords = () => {
-                if (currentUser?.role === 'admin') {
-                    return adminFilterUser === 'all' ? allRecords : allRecords.filter(r => r.username === adminFilterUser);
-                }
-                return allRecords.filter(r => r.username === currentUser?.name);
-            };
-
-            const handleFileChange = async (e) => {
-                const file = e.target.files[0];
-                if (file) {
-                    const reader = new FileReader();
-                    reader.onloadend = async () => {
-                        const compressed = await compressImage(reader.result);
-                        setFormData({...formData, photo: compressed});
+            const compressImage = (base64Str) => {
+                return new Promise((resolve) => {
+                    const img = new Image();
+                    img.src = base64Str;
+                    img.onload = () => {
+                        const canvas = document.createElement('canvas');
+                        const MAX_WIDTH = 800;
+                        let width = img.width;
+                        let height = img.height;
+                        if (width > MAX_WIDTH) {
+                            height *= MAX_WIDTH / width;
+                            width = MAX_WIDTH;
+                        }
+                        canvas.width = width;
+                        canvas.height = height;
+                        const ctx = canvas.getContext('2d');
+                        ctx.drawImage(img, 0, 0, width, height);
+                        resolve(canvas.toDataURL('image/jpeg', 0.6));
                     };
-                    reader.readAsDataURL(file);
-                }
+                });
             };
 
-            if (loading) return <div className="flex h-screen items-center justify-center font-black text-blue-600 animate-pulse text-lg tracking-widest">載入中...</div>;
+            const App = () => {
+                const [view, setView] = useState('login');
+                const [loading, setLoading] = useState(true);
+                const [isSubmitting, setIsSubmitting] = useState(false);
+                const [showSuccess, setShowSuccess] = useState(false);
+                const [currentUser, setCurrentUser] = useState(null);
+                const [allRecords, setAllRecords] = useState([]);
+                const [appUsers, setAppUsers] = useState([]);
+                const [editingId, setEditingId] = useState(null);
+                const [adminFilterUser, setAdminFilterUser] = useState('all');
+                const [adviceInputs, setAdviceInputs] = useState({});
+                const [loginData, setLoginData] = useState({ username: '', password: '', error: null });
+                const [newUserFormData, setNewUserFormData] = useState({ username: '', password: '', role: 'user' });
+                
+                // 自定義刪除確認狀態
+                const [deleteConfirm, setDeleteConfirm] = useState(null); // { id, title, type }
+                
+                const [formData, setFormData] = useState({
+                    time: getLocalISOString(), mealType: '早餐', foodContent: '', drinkContent: '', isFull: '普通', photo: null
+                });
 
-            return (
-                <div className="min-h-screen flex flex-col relative bg-slate-50">
-                    
-                    {/* 確認刪除彈窗 */}
-                    {deleteConfirm && (
-                        <div className="fixed inset-0 z-[110] bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-6 animate-in">
-                            <div className="bg-white rounded-[32px] p-8 max-w-sm w-full shadow-2xl text-center space-y-6">
-                                <div className="w-16 h-16 bg-red-50 text-red-500 rounded-full flex items-center justify-center mx-auto">
-                                    <Icon name="trash-2" size={32} />
-                                </div>
-                                <div>
-                                    <h3 className="text-xl font-black text-slate-800">確認刪除？</h3>
-                                    <p className="text-slate-400 text-sm mt-2 font-bold leading-relaxed">確定要刪除 「{deleteConfirm.title}」嗎？此操作將無法復原。</p>
-                                </div>
-                                <div className="flex gap-3">
-                                    <button onClick={() => setDeleteConfirm(null)} className="flex-1 py-4 bg-slate-100 text-slate-500 rounded-2xl font-black">取消</button>
-                                    <button onClick={confirmDeleteAction} className="flex-1 py-4 bg-red-500 text-white rounded-2xl font-black shadow-lg shadow-red-200">確定刪除</button>
-                                </div>
-                            </div>
-                        </div>
-                    )}
+                useEffect(() => {
+                    if (!window.firebase) return;
+                    if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+                    const db = firebase.firestore();
+                    const auth = firebase.auth();
 
-                    {/* 成功提示 */}
-                    {showSuccess && (
-                        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-white/80 backdrop-blur-md">
-                            <div className="flex flex-col items-center animate-in">
-                                <div className="bg-green-500 p-6 rounded-full text-white shadow-2xl mb-4"><Icon name="check" size={48} strokeWidth={4} /></div>
-                                <h2 className="text-xl font-black text-slate-800">儲存成功</h2>
-                            </div>
-                        </div>
-                    )}
+                    const initFirebase = async () => {
+                        try {
+                            try { await auth.signInAnonymously(); } catch (e) {}
+                            db.collection('diet_records').orderBy('time', 'desc').onSnapshot(snap => {
+                                setAllRecords(snap.docs.map(doc => ({id: doc.id, ...doc.data()})));
+                            });
+                            db.collection('app_users').onSnapshot(snap => {
+                                setAppUsers(snap.docs.map(doc => ({id: doc.id, ...doc.data()})));
+                            });
+                        } catch (err) { 
+                            console.error(err); 
+                        } finally { 
+                            setLoading(false); 
+                        }
+                    };
+                    initFirebase();
+                }, []);
 
-                    {/* 導覽列 */}
-                    <nav className="bg-white/80 backdrop-blur-md border-b border-slate-200 sticky top-0 z-50 px-4 py-3 shadow-sm">
-                        <div className="max-w-7xl mx-auto flex justify-between items-center">
-                            <div className="flex items-center gap-2" onClick={() => currentUser && setView(currentUser.role === 'admin' ? 'admin' : 'report')}>
-                                <div className="bg-blue-600 p-1.5 rounded-lg text-white shadow-lg">
-                                    <Icon name="utensils" size={18} />
-                                </div>
-                                <span className="font-black text-lg tracking-tighter text-slate-800">飲食管家<span className="text-blue-600">.Pro</span></span>
-                            </div>
-                            
-                            {currentUser && (
-                                <div className="flex items-center gap-2 md:gap-4">
-                                    <div className="hidden md:flex items-center gap-1">
-                                        <button onClick={() => setView(currentUser.role === 'admin' ? 'admin' : 'report')} className={`px-4 py-2 rounded-xl text-sm font-black transition-all ${['report', 'admin'].includes(view) ? 'bg-blue-600 text-white' : 'text-slate-500 hover:bg-slate-100'}`}>
-                                            {currentUser.role === 'admin' ? '監控後台' : '回報餐點'}
-                                        </button>
-                                        <button onClick={() => setView('history')} className={`px-4 py-2 rounded-xl text-sm font-black transition-all ${view === 'history' ? 'bg-blue-600 text-white' : 'text-slate-500 hover:bg-slate-100'}`}>歷史紀錄</button>
-                                        {currentUser.role === 'admin' && (
-                                            <button onClick={() => setView('userManagement')} className={`px-4 py-2 rounded-xl text-sm font-black transition-all ${view === 'userManagement' ? 'bg-blue-600 text-white' : 'text-slate-500 hover:bg-slate-100'}`}>帳號管理</button>
-                                        )}
+                const handleLogin = (e) => {
+                    e.preventDefault();
+                    const { username, password } = loginData;
+                    if (username === 'admin' && password === 'admin1357') {
+                        setCurrentUser({ name: '管理員', role: 'admin' });
+                        setView('admin');
+                    } else {
+                        const found = appUsers.find(u => u.username === username && u.password === password);
+                        if (found) {
+                            setCurrentUser({ name: found.username, role: found.role });
+                            setView(found.role === 'admin' ? 'admin' : 'report');
+                        } else {
+                            setLoginData(prev => ({ ...prev, error: '帳號或密碼錯誤' }));
+                            setTimeout(() => setLoginData(prev => ({ ...prev, error: null })), 2500);
+                        }
+                    }
+                };
+
+                const handleSubmit = async (e) => {
+                    e.preventDefault();
+                    setIsSubmitting(true);
+                    const db = firebase.firestore();
+                    try {
+                        let photo = formData.photo;
+                        if (photo && photo.startsWith('data:image')) photo = await compressImage(photo);
+                        const payload = { ...formData, photo, username: currentUser.name, updatedAt: firebase.firestore.FieldValue.serverTimestamp() };
+                        if (editingId) {
+                            await db.collection('diet_records').doc(editingId).update(payload);
+                        } else {
+                            await db.collection('diet_records').add({ ...payload, createdAt: firebase.firestore.FieldValue.serverTimestamp(), advice: "" });
+                        }
+                        setShowSuccess(true);
+                        setEditingId(null);
+                        setFormData({ time: getLocalISOString(), mealType: '早餐', foodContent: '', drinkContent: '', isFull: '普通', photo: null });
+                        setTimeout(() => { setShowSuccess(false); setView('history'); }, 1500);
+                    } catch (err) { alert("送出失敗: " + err.message); } finally { setIsSubmitting(false); }
+                };
+
+                const confirmDeleteAction = async () => {
+                    if (!deleteConfirm) return;
+                    const db = firebase.firestore();
+                    try {
+                        if (deleteConfirm.type === 'user') {
+                            await db.collection('app_users').doc(deleteConfirm.id).delete();
+                        } else if (deleteConfirm.type === 'record') {
+                            await db.collection('diet_records').doc(deleteConfirm.id).delete();
+                        }
+                    } catch (err) {
+                        alert("刪除失敗: " + err.message);
+                    } finally {
+                        setDeleteConfirm(null);
+                    }
+                };
+
+                const handleSaveAdvice = async (recordId) => {
+                    const text = adviceInputs[recordId];
+                    if (!text?.trim()) return;
+                    await firebase.firestore().collection('diet_records').doc(recordId).update({ advice: text, adviceAt: firebase.firestore.FieldValue.serverTimestamp() });
+                    setAdviceInputs(prev => ({ ...prev, [recordId]: '' }));
+                };
+
+                const downloadCSV = () => {
+                    const records = getDisplayRecords();
+                    if (records.length === 0) return;
+                    const headers = ['時間', '餐點', '內容', '飲料', '飽足感', '回報者', '建議'];
+                    const csvContent = "\ufeff" + [headers.join(','), ...records.map(r => [`"${r.time}"`, `"${r.mealType}"`, `"${(r.foodContent || '').replace(/"/g, '""')}"`, `"${(r.drinkContent || '').replace(/"/g, '""')}"`, `"${r.isFull}"`, `"${r.username}"`, `"${(r.advice || '').replace(/"/g, '""')}"`].join(','))].join('\n');
+                    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+                    const link = document.createElement('a');
+                    link.href = URL.createObjectURL(blob);
+                    link.download = `飲食報表_${currentUser.name}.csv`;
+                    link.click();
+                };
+
+                const getDisplayRecords = () => {
+                    if (currentUser?.role === 'admin') {
+                        return adminFilterUser === 'all' ? allRecords : allRecords.filter(r => r.username === adminFilterUser);
+                    }
+                    return allRecords.filter(r => r.username === currentUser?.name);
+                };
+
+                const handleFileChange = async (e) => {
+                    const file = e.target.files[0];
+                    if (file) {
+                        const reader = new FileReader();
+                        reader.onloadend = async () => {
+                            const compressed = await compressImage(reader.result);
+                            setFormData({...formData, photo: compressed});
+                        };
+                        reader.readAsDataURL(file);
+                    }
+                };
+
+                if (loading) return <div className="flex h-screen items-center justify-center font-black text-blue-600 animate-pulse text-lg tracking-widest">載入中...</div>;
+
+                return (
+                    <div className="min-h-screen flex flex-col relative bg-slate-50">
+                        
+                        {/* 確認刪除彈窗 */}
+                        {deleteConfirm && (
+                            <div className="fixed inset-0 z-[110] bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-6 animate-in">
+                                <div className="bg-white rounded-[32px] p-8 max-w-sm w-full shadow-2xl text-center space-y-6">
+                                    <div className="w-16 h-16 bg-red-50 text-red-500 rounded-full flex items-center justify-center mx-auto">
+                                        <Icon name="trash-2" size={32} />
                                     </div>
-                                    <button onClick={() => {setView('login'); setCurrentUser(null);}} className="p-2 text-slate-400 hover:text-red-500 rounded-xl transition-all">
-                                        <Icon name="log-out" size={20} />
-                                    </button>
+                                    <div>
+                                        <h3 className="text-xl font-black text-slate-800">確認刪除？</h3>
+                                        <p className="text-slate-400 text-sm mt-2 font-bold leading-relaxed">確定要刪除 「{deleteConfirm.title}」嗎？此操作將無法復原。</p>
+                                    </div>
+                                    <div className="flex gap-3">
+                                        <button onClick={() => setDeleteConfirm(null)} className="flex-1 py-4 bg-slate-100 text-slate-500 rounded-2xl font-black">取消</button>
+                                        <button onClick={confirmDeleteAction} className="flex-1 py-4 bg-red-500 text-white rounded-2xl font-black shadow-lg shadow-red-200">確定刪除</button>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* 成功提示 */}
+                        {showSuccess && (
+                            <div className="fixed inset-0 z-[100] flex items-center justify-center bg-white/80 backdrop-blur-md">
+                                <div className="flex flex-col items-center animate-in">
+                                    <div className="bg-green-500 p-6 rounded-full text-white shadow-2xl mb-4"><Icon name="check" size={48} strokeWidth={4} /></div>
+                                    <h2 className="text-xl font-black text-slate-800">儲存成功</h2>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* 導覽列 */}
+                        <nav className="bg-white/80 backdrop-blur-md border-b border-slate-200 sticky top-0 z-50 px-4 py-3 shadow-sm">
+                            <div className="max-w-7xl mx-auto flex justify-between items-center">
+                                <div className="flex items-center gap-2" onClick={() => currentUser && setView(currentUser.role === 'admin' ? 'admin' : 'report')}>
+                                    <div className="bg-blue-600 p-1.5 rounded-lg text-white shadow-lg">
+                                        <Icon name="utensils" size={18} />
+                                    </div>
+                                    <span className="font-black text-lg tracking-tighter text-slate-800">飲食管家<span className="text-blue-600">.Pro</span></span>
+                                </div>
+                                
+                                {currentUser && (
+                                    <div className="flex items-center gap-2 md:gap-4">
+                                        <div className="hidden md:flex items-center gap-1">
+                                            <button onClick={() => setView(currentUser.role === 'admin' ? 'admin' : 'report')} className={`px-4 py-2 rounded-xl text-sm font-black transition-all ${['report', 'admin'].includes(view) ? 'bg-blue-600 text-white' : 'text-slate-500 hover:bg-slate-100'}`}>
+                                                {currentUser.role === 'admin' ? '監控後台' : '回報餐點'}
+                                            </button>
+                                            <button onClick={() => setView('history')} className={`px-4 py-2 rounded-xl text-sm font-black transition-all ${view === 'history' ? 'bg-blue-600 text-white' : 'text-slate-500 hover:bg-slate-100'}`}>歷史紀錄</button>
+                                            {currentUser.role === 'admin' && (
+                                                <button onClick={() => setView('userManagement')} className={`px-4 py-2 rounded-xl text-sm font-black transition-all ${view === 'userManagement' ? 'bg-blue-600 text-white' : 'text-slate-500 hover:bg-slate-100'}`}>帳號管理</button>
+                                            )}
+                                        </div>
+                                        <button onClick={() => {setView('login'); setCurrentUser(null);}} className="p-2 text-slate-400 hover:text-red-500 rounded-xl transition-all">
+                                            <Icon name="log-out" size={20} />
+                                        </button>
+                                    </div>
+                                )}
+                            </div>
+                        </nav>
+
+                        <main className={`flex-1 p-4 md:p-8 w-full mx-auto pb-24 md:pb-8 ${view === 'history' || view === 'admin' ? 'max-w-7xl' : 'max-w-xl'}`}>
+                            
+                            {view === 'login' && (
+                                <div className="mt-8 md:mt-16 animate-in">
+                                    <div className="bg-white rounded-[32px] md:rounded-[48px] p-8 md:p-12 shadow-xl border border-slate-100 text-center">
+                                        <h1 className="text-3xl font-black text-slate-800 mb-2">登入系統</h1>
+                                        <p className="text-slate-400 font-bold text-sm mb-8">開始追蹤您的健康飲食</p>
+                                        <form onSubmit={handleLogin} className="space-y-4">
+                                            <div className="relative">
+                                                <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300"><Icon name="user" size={18} /></div>
+                                                <input placeholder="帳號" className="w-full p-4 pl-12 bg-slate-50 border-none rounded-2xl font-bold focus:ring-2 focus:ring-blue-500 outline-none shadow-inner" value={loginData.username} onChange={e => setLoginData({...loginData, username: e.target.value})} required />
+                                            </div>
+                                            <div className="relative">
+                                                <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300"><Icon name="lock" size={18} /></div>
+                                                <input type="password" placeholder="密碼" className="w-full p-4 pl-12 bg-slate-50 border-none rounded-2xl font-bold focus:ring-2 focus:ring-blue-500 outline-none shadow-inner" value={loginData.password} onChange={e => setLoginData({...loginData, password: e.target.value})} required />
+                                            </div>
+                                            {loginData.error && <p className="text-red-500 text-xs font-black bg-red-50 py-3 rounded-xl">{loginData.error}</p>}
+                                            <button className="w-full bg-slate-900 text-white font-black py-4 rounded-2xl shadow-lg hover:bg-blue-600 transition-all text-lg">登入</button>
+                                        </form>
+                                    </div>
                                 </div>
                             )}
-                        </div>
-                    </nav>
 
-                    <main className={`flex-1 p-4 md:p-8 w-full mx-auto pb-24 md:pb-8 ${view === 'history' || view === 'admin' ? 'max-w-7xl' : 'max-w-xl'}`}>
-                        
-                        {view === 'login' && (
-                            <div className="mt-8 md:mt-16 animate-in">
-                                <div className="bg-white rounded-[32px] md:rounded-[48px] p-8 md:p-12 shadow-xl border border-slate-100 text-center">
-                                    <h1 className="text-3xl font-black text-slate-800 mb-2">登入系統</h1>
-                                    <p className="text-slate-400 font-bold text-sm mb-8">開始追蹤您的健康飲食</p>
-                                    <form onSubmit={handleLogin} className="space-y-4">
-                                        <div className="relative">
-                                            <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300"><Icon name="user" size={18} /></div>
-                                            <input placeholder="帳號" className="w-full p-4 pl-12 bg-slate-50 border-none rounded-2xl font-bold focus:ring-2 focus:ring-blue-500 outline-none shadow-inner" value={loginData.username} onChange={e => setLoginData({...loginData, username: e.target.value})} required />
+                            {view === 'userManagement' && (
+                                <div className="space-y-6 animate-in">
+                                    <h2 className="text-2xl font-black flex items-center gap-2"><Icon name="users" size={24} className="text-blue-600" /> 帳號管理</h2>
+                                    <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 space-y-4">
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                            <input placeholder="新帳號" className="p-4 rounded-xl bg-slate-50 font-bold border-none shadow-inner" value={newUserFormData.username} onChange={e => setNewUserFormData({...newUserFormData, username: e.target.value})} />
+                                            <input placeholder="密碼" className="p-4 rounded-xl bg-slate-50 font-bold border-none shadow-inner" value={newUserFormData.password} onChange={e => setNewUserFormData({...newUserFormData, password: e.target.value})} />
                                         </div>
-                                        <div className="relative">
-                                            <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300"><Icon name="lock" size={18} /></div>
-                                            <input type="password" placeholder="密碼" className="w-full p-4 pl-12 bg-slate-50 border-none rounded-2xl font-bold focus:ring-2 focus:ring-blue-500 outline-none shadow-inner" value={loginData.password} onChange={e => setLoginData({...loginData, password: e.target.value})} required />
-                                        </div>
-                                        {loginData.error && <p className="text-red-500 text-xs font-black bg-red-50 py-3 rounded-xl">{loginData.error}</p>}
-                                        <button className="w-full bg-slate-900 text-white font-black py-4 rounded-2xl shadow-lg hover:bg-blue-600 transition-all text-lg">登入</button>
-                                    </form>
-                                </div>
-                            </div>
-                        )}
-
-                        {view === 'userManagement' && (
-                            <div className="space-y-6 animate-in">
-                                <h2 className="text-2xl font-black flex items-center gap-2"><Icon name="users" size={24} className="text-blue-600" /> 帳號管理</h2>
-                                <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 space-y-4">
-                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                                        <input placeholder="新帳號" className="p-4 rounded-xl bg-slate-50 font-bold border-none shadow-inner" value={newUserFormData.username} onChange={e => setNewUserFormData({...newUserFormData, username: e.target.value})} />
-                                        <input placeholder="密碼" className="p-4 rounded-xl bg-slate-50 font-bold border-none shadow-inner" value={newUserFormData.password} onChange={e => setNewUserFormData({...newUserFormData, password: e.target.value})} />
+                                        <button onClick={async () => {
+                                            if(!newUserFormData.username || !newUserFormData.password) return;
+                                            await firebase.firestore().collection('app_users').add({ ...newUserFormData, createdAt: firebase.firestore.FieldValue.serverTimestamp() });
+                                            setNewUserFormData({username: '', password: '', role: 'user'});
+                                        }} className="w-full bg-slate-900 text-white py-4 rounded-xl font-black">新增使用者</button>
                                     </div>
-                                    <button onClick={async () => {
-                                        if(!newUserFormData.username || !newUserFormData.password) return;
-                                        await firebase.firestore().collection('app_users').add({ ...newUserFormData, createdAt: firebase.firestore.FieldValue.serverTimestamp() });
-                                        setNewUserFormData({username: '', password: '', role: 'user'});
-                                    }} className="w-full bg-slate-900 text-white py-4 rounded-xl font-black">新增使用者</button>
-                                </div>
-                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                                    {appUsers.map(u => (
-                                        <div key={u.id} className="bg-white p-4 rounded-2xl border border-slate-100 flex justify-between items-center shadow-sm">
-                                            <div>
-                                                <div className="font-black">{u.username}</div>
-                                                <div className="text-[10px] text-slate-300 font-bold">PW: {u.password}</div>
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                                        {appUsers.map(u => (
+                                            <div key={u.id} className="bg-white p-4 rounded-2xl border border-slate-100 flex justify-between items-center shadow-sm">
+                                                <div>
+                                                    <div className="font-black">{u.username}</div>
+                                                    <div className="text-[10px] text-slate-300 font-bold">PW: {u.password}</div>
+                                                </div>
+                                                <button 
+                                                    onClick={() => setDeleteConfirm({ id: u.id, title: u.username, type: 'user' })} 
+                                                    className="p-2 text-slate-300 hover:text-red-500"
+                                                >
+                                                    <Icon name="trash-2" size={18} />
+                                                </button>
                                             </div>
-                                            <button 
-                                                onClick={() => setDeleteConfirm({ id: u.id, title: u.username, type: 'user' })} 
-                                                className="p-2 text-slate-300 hover:text-red-500"
-                                            >
-                                                <Icon name="trash-2" size={18} />
-                                            </button>
-                                        </div>
-                                    ))}
+                                        ))}
+                                    </div>
                                 </div>
-                            </div>
-                        )}
+                            )}
 
-                        {view === 'report' && (
-                            <div className="animate-in space-y-6">
-                                <h2 className="text-2xl font-black px-1">{editingId ? '編輯紀錄' : '新增餐點回報'}</h2>
-                                <form onSubmit={handleSubmit} className="bg-white rounded-[32px] p-6 md:p-10 shadow-xl border border-slate-50 space-y-6">
-                                    <div className="space-y-4">
-                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                            <div className="space-y-1.5">
-                                                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">時間</label>
-                                                <input type="datetime-local" className="w-full bg-slate-50 p-4 rounded-xl font-bold border-none shadow-inner text-slate-700" value={formData.time} onChange={e => setFormData({...formData, time: e.target.value})} />
+                            {view === 'report' && (
+                                <div className="animate-in space-y-6">
+                                    <h2 className="text-2xl font-black px-1">{editingId ? '編輯紀錄' : '新增餐點回報'}</h2>
+                                    <form onSubmit={handleSubmit} className="bg-white rounded-[32px] p-6 md:p-10 shadow-xl border border-slate-50 space-y-6">
+                                        <div className="space-y-4">
+                                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                                <div className="space-y-1.5">
+                                                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">時間</label>
+                                                    <input type="datetime-local" className="w-full bg-slate-50 p-4 rounded-xl font-bold border-none shadow-inner text-slate-700" value={formData.time} onChange={e => setFormData({...formData, time: e.target.value})} />
+                                                </div>
+                                                <div className="space-y-1.5">
+                                                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">餐點類別</label>
+                                                    <div className="grid grid-cols-4 sm:grid-cols-2 lg:grid-cols-4 gap-1.5">
+                                                        {['早餐', '午餐', '晚餐', '點心'].map(t => (
+                                                            <button key={t} type="button" onClick={() => setFormData({...formData, mealType: t})} className={`py-3 rounded-lg text-xs font-black transition-all ${formData.mealType === t ? 'bg-blue-600 text-white shadow-md' : 'bg-slate-50 text-slate-400'}`}>{t}</button>
+                                                        ))}
+                                                    </div>
+                                                </div>
                                             </div>
+                                            
                                             <div className="space-y-1.5">
-                                                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">餐點類別</label>
-                                                <div className="grid grid-cols-4 sm:grid-cols-2 lg:grid-cols-4 gap-1.5">
-                                                    {['早餐', '午餐', '晚餐', '點心'].map(t => (
-                                                        <button key={t} type="button" onClick={() => setFormData({...formData, mealType: t})} className={`py-3 rounded-lg text-xs font-black transition-all ${formData.mealType === t ? 'bg-blue-600 text-white shadow-md' : 'bg-slate-50 text-slate-400'}`}>{t}</button>
+                                                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">飲食內容</label>
+                                                <textarea placeholder="例如：雞腿便當、水果..." className="w-full p-4 bg-slate-50 rounded-2xl h-24 border-none focus:ring-2 focus:ring-blue-500/20 resize-none font-bold shadow-inner" value={formData.foodContent} onChange={e => setFormData({...formData, foodContent: e.target.value})} required />
+                                            </div>
+                                            
+                                            <div className="space-y-1.5">
+                                                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">飲料內容</label>
+                                                <div className="relative">
+                                                    <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300"><Icon name="coffee" size={18} /></div>
+                                                    <input placeholder="飲料或水" className="w-full p-4 pl-12 bg-slate-50 border-none rounded-xl font-bold shadow-inner" value={formData.drinkContent} onChange={e => setFormData({...formData, drinkContent: e.target.value})} />
+                                                </div>
+                                            </div>
+
+                                            <div className="space-y-1.5">
+                                                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">飽足感</label>
+                                                <div className="flex gap-2">
+                                                    {['很餓', '剛好', '很飽'].map(l => (
+                                                        <button key={l} type="button" onClick={() => setFormData({...formData, isFull: l})} className={`flex-1 py-3 rounded-xl border-2 font-black text-xs transition-all ${formData.isFull === l ? 'border-blue-500 bg-blue-50 text-blue-600' : 'border-slate-100 bg-slate-50 text-slate-300'}`}>{l}</button>
                                                     ))}
                                                 </div>
                                             </div>
-                                        </div>
-                                        
-                                        <div className="space-y-1.5">
-                                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">飲食內容</label>
-                                            <textarea placeholder="例如：雞腿便當、水果..." className="w-full p-4 bg-slate-50 rounded-2xl h-24 border-none focus:ring-2 focus:ring-blue-500/20 resize-none font-bold shadow-inner" value={formData.foodContent} onChange={e => setFormData({...formData, foodContent: e.target.value})} required />
-                                        </div>
-                                        
-                                        <div className="space-y-1.5">
-                                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">飲料內容</label>
-                                            <div className="relative">
-                                                <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300"><Icon name="coffee" size={18} /></div>
-                                                <input placeholder="飲料或水" className="w-full p-4 pl-12 bg-slate-50 border-none rounded-xl font-bold shadow-inner" value={formData.drinkContent} onChange={e => setFormData({...formData, drinkContent: e.target.value})} />
-                                            </div>
-                                        </div>
-
-                                        <div className="space-y-1.5">
-                                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">飽足感</label>
-                                            <div className="flex gap-2">
-                                                {['很餓', '剛好', '很飽'].map(l => (
-                                                    <button key={l} type="button" onClick={() => setFormData({...formData, isFull: l})} className={`flex-1 py-3 rounded-xl border-2 font-black text-xs transition-all ${formData.isFull === l ? 'border-blue-500 bg-blue-50 text-blue-600' : 'border-slate-100 bg-slate-50 text-slate-300'}`}>{l}</button>
-                                                ))}
-                                            </div>
-                                        </div>
-                                        
-                                        <div className="relative aspect-video sm:aspect-[21/9] w-full border-2 border-dashed border-slate-200 rounded-3xl overflow-hidden group bg-slate-50">
-                                            <input type="file" accept="image/*" className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-20" onChange={handleFileChange} />
-                                            <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none z-10">
-                                                {formData.photo ? (
-                                                    <img src={formData.photo} className="w-full h-full object-cover" alt="preview" />
-                                                ) : (
-                                                    <div className="text-center text-slate-300 group-hover:text-blue-500 transition-colors">
-                                                        <Icon name="camera" size={32} className="mx-auto mb-2" />
-                                                        <span className="text-[10px] font-black uppercase tracking-wider">上傳照片</span>
-                                                    </div>
-                                                )}
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <div className="flex gap-2">
-                                        {editingId && (
-                                            <button type="button" onClick={() => setView('history')} className="flex-1 bg-slate-100 text-slate-500 font-black py-4 rounded-2xl">取消</button>
-                                        )}
-                                        <button type="submit" disabled={isSubmitting} className="flex-[2] bg-blue-600 text-white font-black py-4 rounded-2xl shadow-lg active:scale-[0.98] transition-all disabled:bg-slate-300 text-lg">
-                                            {isSubmitting ? '處理中...' : (editingId ? '更新紀錄' : '確認送出')}
-                                        </button>
-                                    </div>
-                                </form>
-                            </div>
-                        )}
-
-                        {(view === 'history' || view === 'admin') && (
-                            <div className="space-y-6 animate-in">
-                                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 px-1">
-                                    <h2 className="text-2xl font-black flex items-center gap-2">
-                                        <Icon name={view === 'admin' ? "shield-check" : "history"} size={28} className="text-blue-600" />
-                                        {view === 'admin' ? '全體數據' : '飲食歷史'}
-                                    </h2>
-                                    <div className="flex gap-2">
-                                        <button onClick={downloadCSV} className="flex-1 sm:flex-none flex items-center justify-center gap-2 bg-white border border-slate-200 text-slate-600 px-4 py-2.5 rounded-xl font-black text-xs">
-                                            <Icon name="download" size={16} /> 匯出
-                                        </button>
-                                        <button onClick={() => {setEditingId(null); setFormData(prev => ({...prev, time: getLocalISOString()})); setView('report');}} className="flex-1 sm:flex-none flex items-center justify-center gap-2 bg-blue-600 text-white px-4 py-2.5 rounded-xl font-black text-xs shadow-md">
-                                            <Icon name="plus" size={16} /> 新增
-                                        </button>
-                                    </div>
-                                </div>
-
-                                {currentUser?.role === 'admin' && (
-                                    <div className="bg-white p-4 rounded-2xl shadow-sm border border-slate-100 flex items-center gap-3">
-                                        <Icon name="filter" size={18} className="text-slate-400" />
-                                        <select className="flex-1 bg-transparent border-none font-black text-slate-700 text-sm outline-none cursor-pointer" value={adminFilterUser} onChange={e => setAdminFilterUser(e.target.value)}>
-                                            <option value="all">顯示全部人員</option>
-                                            {[...new Set(appUsers.map(u => u.username))].map(uname => <option key={uname} value={uname}>{uname}</option>)}
-                                        </select>
-                                    </div>
-                                )}
-
-                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                                    {getDisplayRecords().length === 0 ? (
-                                        <div className="col-span-full py-20 text-center text-slate-300 font-black">尚無紀錄</div>
-                                    ) : (
-                                        getDisplayRecords().map(record => (
-                                            <div key={record.id} className="bg-white rounded-3xl shadow-sm border border-slate-200 flex flex-col relative overflow-hidden group hover:shadow-md transition-all">
-                                                <div className="p-4 sm:p-5 flex gap-4">
-                                                    <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl overflow-hidden flex-shrink-0 bg-slate-50 border border-slate-100 shadow-inner relative">
-                                                        {record.photo ? <img src={record.photo} className="w-full h-full object-cover" alt="diet" /> : <div className="w-full h-full flex items-center justify-center text-slate-200"><Icon name="camera-off" size={24} /></div>}
-                                                        {(currentUser?.role === 'admin' || record.username === currentUser?.name) && (
-                                                            <div className="absolute inset-0 bg-black/40 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity gap-2">
-                                                                <button onClick={() => { setEditingId(record.id); setFormData({...record}); setView('report'); }} className="p-2 bg-blue-600 rounded-lg"><Icon name="pencil" size={16} /></button>
-                                                                <button onClick={() => setDeleteConfirm({ id: record.id, title: record.foodContent, type: 'record' })} className="p-2 bg-red-600 rounded-lg"><Icon name="trash-2" size={16} /></button>
-                                                            </div>
-                                                        )}
-                                                    </div>
-                                                    <div className="flex-1 min-w-0 flex flex-col justify-between">
-                                                        <div className="space-y-1">
-                                                            <div className="flex items-center justify-between">
-                                                                <span className="text-[9px] px-2 py-0.5 rounded-md font-black bg-blue-50 text-blue-600 uppercase tracking-wider">{record.mealType}</span>
-                                                                <span className="text-[9px] text-slate-300 font-bold">{record.time ? record.time.replace('T', ' ') : ''}</span>
-                                                            </div>
-                                                            <h3 className="text-base font-black text-slate-800 line-clamp-1">{record.foodContent}</h3>
-                                                            <p className="text-[10px] text-slate-400 font-bold truncate flex items-center gap-1"><Icon name="coffee" size={12} /> {record.drinkContent || '水'}</p>
-                                                        </div>
-                                                        <div className="flex items-center justify-between mt-2">
-                                                            <span className="text-[9px] px-2 py-1 rounded-lg font-black bg-slate-50 text-slate-500">{record.isFull}</span>
-                                                            {view === 'admin' && <span className="text-[9px] font-black text-blue-600">@{record.username}</span>}
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                                
-                                                <div className="px-4 pb-4">
-                                                    {record.advice ? (
-                                                        <div className="bg-slate-900 p-4 rounded-2xl text-white relative overflow-hidden">
-                                                            <div className="absolute -right-2 -top-2 opacity-10"><Icon name="sparkles" size={40} fill="white"/></div>
-                                                            <div className="text-[9px] font-black text-blue-400 mb-1">專家點評</div>
-                                                            <p className="text-xs font-bold leading-relaxed">{record.advice}</p>
-                                                        </div>
+                                            
+                                            <div className="relative aspect-video sm:aspect-[21/9] w-full border-2 border-dashed border-slate-200 rounded-3xl overflow-hidden group bg-slate-50">
+                                                <input type="file" accept="image/*" className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-20" onChange={handleFileChange} />
+                                                <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none z-10">
+                                                    {formData.photo ? (
+                                                        <img src={formData.photo} className="w-full h-full object-cover" alt="preview" />
                                                     ) : (
-                                                        currentUser?.role === 'admin' ? (
-                                                            <div className="flex gap-2 p-1 bg-slate-50 rounded-xl border border-slate-100">
-                                                                <input className="flex-1 bg-transparent border-none text-xs p-2 outline-none font-bold" placeholder="給予建議..." value={adviceInputs[record.id] || ''} onChange={e => setAdviceInputs({...adviceInputs, [record.id]: e.target.value})} />
-                                                                <button onClick={() => handleSaveAdvice(record.id)} className="bg-blue-600 text-white p-2 rounded-lg"><Icon name="send" size={14} /></button>
-                                                            </div>
-                                                        ) : <div className="text-[9px] text-slate-300 font-black tracking-widest text-center py-2 italic">尚未有專家建議</div>
+                                                        <div className="text-center text-slate-300 group-hover:text-blue-500 transition-colors">
+                                                            <Icon name="camera" size={32} className="mx-auto mb-2" />
+                                                            <span className="text-[10px] font-black uppercase tracking-wider">上傳照片</span>
+                                                        </div>
                                                     )}
                                                 </div>
                                             </div>
-                                        ))
-                                    )}
+                                        </div>
+
+                                        <div className="flex gap-2">
+                                            {editingId && (
+                                                <button type="button" onClick={() => setView('history')} className="flex-1 bg-slate-100 text-slate-500 font-black py-4 rounded-2xl">取消</button>
+                                            )}
+                                            <button type="submit" disabled={isSubmitting} className="flex-[2] bg-blue-600 text-white font-black py-4 rounded-2xl shadow-lg active:scale-[0.98] transition-all disabled:bg-slate-300 text-lg">
+                                                {isSubmitting ? '處理中...' : (editingId ? '更新紀錄' : '確認送出')}
+                                            </button>
+                                        </div>
+                                    </form>
                                 </div>
+                            )}
+
+                            {(view === 'history' || view === 'admin') && (
+                                <div className="space-y-6 animate-in">
+                                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 px-1">
+                                        <h2 className="text-2xl font-black flex items-center gap-2">
+                                            <Icon name={view === 'admin' ? "shield-check" : "history"} size={28} className="text-blue-600" />
+                                            {view === 'admin' ? '全體數據' : '飲食歷史'}
+                                        </h2>
+                                        <div className="flex gap-2">
+                                            <button onClick={downloadCSV} className="flex-1 sm:flex-none flex items-center justify-center gap-2 bg-white border border-slate-200 text-slate-600 px-4 py-2.5 rounded-xl font-black text-xs">
+                                                <Icon name="download" size={16} /> 匯出
+                                            </button>
+                                            <button onClick={() => {setEditingId(null); setFormData(prev => ({...prev, time: getLocalISOString()})); setView('report');}} className="flex-1 sm:flex-none flex items-center justify-center gap-2 bg-blue-600 text-white px-4 py-2.5 rounded-xl font-black text-xs shadow-md">
+                                                <Icon name="plus" size={16} /> 新增
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    {currentUser?.role === 'admin' && (
+                                        <div className="bg-white p-4 rounded-2xl shadow-sm border border-slate-100 flex items-center gap-3">
+                                            <Icon name="filter" size={18} className="text-slate-400" />
+                                            <select className="flex-1 bg-transparent border-none font-black text-slate-700 text-sm outline-none cursor-pointer" value={adminFilterUser} onChange={e => setAdminFilterUser(e.target.value)}>
+                                                <option value="all">顯示全部人員</option>
+                                                {[...new Set(appUsers.map(u => u.username))].map(uname => <option key={uname} value={uname}>{uname}</option>)}
+                                            </select>
+                                        </div>
+                                    )}
+
+                                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                        {getDisplayRecords().length === 0 ? (
+                                            <div className="col-span-full py-20 text-center text-slate-300 font-black">尚無紀錄</div>
+                                        ) : (
+                                            getDisplayRecords().map(record => (
+                                                <div key={record.id} className="bg-white rounded-3xl shadow-sm border border-slate-200 flex flex-col relative overflow-hidden group hover:shadow-md transition-all">
+                                                    <div className="p-4 sm:p-5 flex gap-4">
+                                                        <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl overflow-hidden flex-shrink-0 bg-slate-50 border border-slate-100 shadow-inner relative">
+                                                            {record.photo ? <img src={record.photo} className="w-full h-full object-cover" alt="diet" /> : <div className="w-full h-full flex items-center justify-center text-slate-200"><Icon name="camera-off" size={24} /></div>}
+                                                            {(currentUser?.role === 'admin' || record.username === currentUser?.name) && (
+                                                                <div className="absolute inset-0 bg-black/40 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity gap-2">
+                                                                    <button onClick={() => { setEditingId(record.id); setFormData({...record}); setView('report'); }} className="p-2 bg-blue-600 rounded-lg"><Icon name="pencil" size={16} /></button>
+                                                                    <button onClick={() => setDeleteConfirm({ id: record.id, title: record.foodContent, type: 'record' })} className="p-2 bg-red-600 rounded-lg"><Icon name="trash-2" size={16} /></button>
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                        <div className="flex-1 min-w-0 flex flex-col justify-between">
+                                                            <div className="space-y-1">
+                                                                <div className="flex items-center justify-between">
+                                                                    <span className="text-[9px] px-2 py-0.5 rounded-md font-black bg-blue-50 text-blue-600 uppercase tracking-wider">{record.mealType}</span>
+                                                                    <span className="text-[9px] text-slate-300 font-bold">{record.time ? record.time.replace('T', ' ') : ''}</span>
+                                                                </div>
+                                                                <h3 className="text-base font-black text-slate-800 line-clamp-1">{record.foodContent}</h3>
+                                                                <p className="text-[10px] text-slate-400 font-bold truncate flex items-center gap-1"><Icon name="coffee" size={12} /> {record.drinkContent || '水'}</p>
+                                                            </div>
+                                                            <div className="flex items-center justify-between mt-2">
+                                                                <span className="text-[9px] px-2 py-1 rounded-lg font-black bg-slate-50 text-slate-500">{record.isFull}</span>
+                                                                {view === 'admin' && <span className="text-[9px] font-black text-blue-600">@{record.username}</span>}
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    
+                                                    <div className="px-4 pb-4">
+                                                        {record.advice ? (
+                                                            <div className="bg-slate-900 p-4 rounded-2xl text-white relative overflow-hidden">
+                                                                <div className="absolute -right-2 -top-2 opacity-10"><Icon name="sparkles" size={40} fill="white"/></div>
+                                                                <div className="text-[9px] font-black text-blue-400 mb-1">專家點評</div>
+                                                                <p className="text-xs font-bold leading-relaxed">{record.advice}</p>
+                                                            </div>
+                                                        ) : (
+                                                            currentUser?.role === 'admin' ? (
+                                                                <div className="flex gap-2 p-1 bg-slate-50 rounded-xl border border-slate-100">
+                                                                    <input className="flex-1 bg-transparent border-none text-xs p-2 outline-none font-bold" placeholder="給予建議..." value={adviceInputs[record.id] || ''} onChange={e => setAdviceInputs({...adviceInputs, [record.id]: e.target.value})} />
+                                                                    <button onClick={() => handleSaveAdvice(record.id)} className="bg-blue-600 text-white p-2 rounded-lg"><Icon name="send" size={14} /></button>
+                                                                </div>
+                                                            ) : <div className="text-[9px] text-slate-300 font-black tracking-widest text-center py-2 italic">尚未有專家建議</div>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            ))
+                                        )}
+                                    </div>
+                                </div>
+                            )}
+                        </main>
+
+                        {/* 行動裝置底部導覽列 */}
+                        {view !== 'login' && (
+                            <div className="md:hidden fixed bottom-0 left-0 right-0 bg-white/90 backdrop-blur-xl border-t border-slate-200 px-6 py-3 flex justify-around items-center z-40 shadow-[0_-4px_20px_rgba(0,0,0,0.05)]">
+                                <button onClick={() => { setEditingId(null); setFormData(prev => ({...prev, time: getLocalISOString()})); setView('report'); }} className={`flex flex-col items-center gap-1 transition-all ${view === 'report' ? 'text-blue-600' : 'text-slate-300'}`}>
+                                    <Icon name="plus-circle" size={24} strokeWidth={view === 'report' ? 3 : 2} /><span className="text-[9px] font-black">回報</span>
+                                </button>
+                                <button onClick={() => setView('history')} className={`flex flex-col items-center gap-1 transition-all ${view === 'history' ? 'text-blue-600' : 'text-slate-300'}`}>
+                                    <Icon name="list" size={24} strokeWidth={view === 'history' ? 3 : 2} /><span className="text-[9px] font-black">紀錄</span>
+                                </button>
+                                {currentUser?.role === 'admin' && (
+                                    <button onClick={() => setView('admin')} className={`flex flex-col items-center gap-1 transition-all ${view === 'admin' ? 'text-blue-600' : 'text-slate-300'}`}>
+                                        <Icon name="shield" size={24} strokeWidth={view === 'admin' ? 3 : 2} /><span className="text-[9px] font-black">管理</span>
+                                    </button>
+                                )}
                             </div>
                         )}
-                    </main>
-
-                    {/* 行動裝置底部導覽列 */}
-                    {view !== 'login' && (
-                        <div className="md:hidden fixed bottom-0 left-0 right-0 bg-white/90 backdrop-blur-xl border-t border-slate-200 px-6 py-3 flex justify-around items-center z-40 shadow-[0_-4px_20px_rgba(0,0,0,0.05)]">
-                            <button onClick={() => { setEditingId(null); setFormData(prev => ({...prev, time: getLocalISOString()})); setView('report'); }} className={`flex flex-col items-center gap-1 transition-all ${view === 'report' ? 'text-blue-600' : 'text-slate-300'}`}>
-                                <Icon name="plus-circle" size={24} strokeWidth={view === 'report' ? 3 : 2} /><span className="text-[9px] font-black">回報</span>
-                            </button>
-                            <button onClick={() => setView('history')} className={`flex flex-col items-center gap-1 transition-all ${view === 'history' ? 'text-blue-600' : 'text-slate-300'}`}>
-                                <Icon name="list" size={24} strokeWidth={view === 'history' ? 3 : 2} /><span className="text-[9px] font-black">紀錄</span>
-                            </button>
-                            {currentUser?.role === 'admin' && (
-                                <button onClick={() => setView('admin')} className={`flex flex-col items-center gap-1 transition-all ${view === 'admin' ? 'text-blue-600' : 'text-slate-300'}`}>
-                                    <Icon name="shield" size={24} strokeWidth={view === 'admin' ? 3 : 2} /><span className="text-[9px] font-black">管理</span>
-                                </button>
-                            )}
-                        </div>
-                    )}
-                </div>
-            );
-        };
-        const root = ReactDOM.createRoot(document.getElementById('root'));
-        root.render(<App />);
-    </script>
-</body>
+                    </div>
+                );
+            };
+            const root = ReactDOM.createRoot(document.getElementById('root'));
+            root.render(<App />);
+        </script>
+    </body>
 </html>
