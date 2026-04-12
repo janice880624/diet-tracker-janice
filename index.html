@@ -150,16 +150,31 @@
                     initFirebase();
                 }, []);
 
-                const handleLogin = (e) => {
+                const handleLogin = async (e) => { // 加上 async
                     e.preventDefault();
                     const { username, password } = loginData;
-                    const found = appUsers.find(u => u.username === username && u.password === password);
-                    if (found) {
-                        setCurrentUser({ name: found.username, role: found.role });
-                        setView(found.role === 'admin' ? 'admin' : 'report');
-                    } else {
-                        setLoginData(prev => ({ ...prev, error: '帳號或密碼錯誤' }));
-                        setTimeout(() => setLoginData(prev => ({ ...prev, error: null })), 2500);
+                    
+                    setLoading(true); // 顯示載入中，防止重複點擊
+                    const db = firebase.firestore();
+                    
+                    try {
+                        const snapshot = await db.collection('app_users')
+                            .where('username', '==', username)
+                            .where('password', '==', password)
+                            .get();
+
+                        if (!snapshot.empty) {
+                            const found = snapshot.docs[0].data();
+                            setCurrentUser({ name: found.username, role: found.role });
+                            setView(found.role === 'admin' ? 'admin' : 'report');
+                        } else {
+                            setLoginData(prev => ({ ...prev, error: '帳號或密碼錯誤' }));
+                            setTimeout(() => setLoginData(prev => ({ ...prev, error: null })), 2500);
+                        }
+                    } catch (err) {
+                        setLoginData(prev => ({ ...prev, error: '連線錯誤，請稍後再試' }));
+                    } finally {
+                        setLoading(false);
                     }
                 };
 
