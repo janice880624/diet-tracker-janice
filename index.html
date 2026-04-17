@@ -150,29 +150,54 @@
                     initFirebase();
                 }, []);
 
-                const handleLogin = async (e) => { // 加上 async
+                const handleLogin = async (e) => {
                     e.preventDefault();
                     const { username, password } = loginData;
+                    setLoading(true);
                     
-                    setLoading(true); // 顯示載入中，防止重複點擊
                     const db = firebase.firestore();
                     
                     try {
+                        // 1. 檢查 Firebase 連線狀態
+                        if (!navigator.onLine) {
+                            throw new Error("網路連線斷開，請檢查網路。");
+                        }
+
+                        // 2. 執行查詢
                         const snapshot = await db.collection('app_users')
                             .where('username', '==', username)
-                            .where('password', '==', password)
                             .get();
 
-                        if (!snapshot.empty) {
-                            const found = snapshot.docs[0].data();
-                            setCurrentUser({ name: found.username, role: found.role });
-                            setView(found.role === 'admin' ? 'admin' : 'report');
-                        } else {
-                            setLoginData(prev => ({ ...prev, error: '帳號或密碼錯誤' }));
-                            setTimeout(() => setLoginData(prev => ({ ...prev, error: null })), 2500);
+                        if (snapshot.empty) {
+                            throw new Error(`找不到帳號: ${username}`);
                         }
+
+                        const userDoc = snapshot.docs[0].data();
+                        
+                        if (userDoc.password !== password) {
+                            throw new Error("密碼錯誤");
+                        }
+
+                        // 登入成功
+                        setCurrentUser({ name: userDoc.username, role: userDoc.role });
+                        setView(userDoc.role === 'admin' ? 'admin' : 'report');
+
                     } catch (err) {
-                        setLoginData(prev => ({ ...prev, error: '連線錯誤，請稍後再試' }));
+                        console.error("登入失敗詳情:", err.message);
+                        
+                        // 將錯誤原因顯示在介面上
+                        setLoginData(prev => ({ ...prev, error: `登入失敗: ${err.message}` }));
+                        
+                        // 3. 自動紀錄錯誤 Log 到 Firebase (可選)
+                        db.collection('error_logs').add({
+                            type: 'LOGIN_FAILED',
+                            username: username,
+                            reason: err.message,
+                            time: new Date().toLocaleString(),
+                            userAgent: navigator.userAgent // 紀錄是用什麼瀏覽器/裝置
+                        });
+
+                        setTimeout(() => setLoginData(prev => ({ ...prev, error: null })), 4000);
                     } finally {
                         setLoading(false);
                     }
